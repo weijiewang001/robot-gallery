@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import logo from './assets/images/logo.svg';
 import robots from './mockdata/robots.json'
 import Robot from "./components/Robot"
+import RobotDiscount from "./components/RobotDiscount"
+
 import styles from './App.module.css';
 import ShoppingCart from './components/ShoppingCart';
 
 interface Props {
-
+  
 }
 
 interface State {
@@ -18,22 +20,41 @@ interface State {
 // const jsHacked = "javascript: alert('Hacked!');"
 
 
-class App extends React.Component<Props, State> {
-  constructor(props) {
-    super(props)
-    this.state = {
-      robotGallery: [],
-      count: 0,
-    };
-  }
+const App : React.FC = (props) => {
 
-  componentDidMount () {
-    fetch("https://jsonplaceholder.typicode.com/users")
-    .then(response => response.json()
-    .then(data => this.setState({robotGallery:data})))
-  }
+  const [count, setCount] = useState<number>(0)
+  const [robotGallery, setRobotGallery] = useState<any>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
-  render() {
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    document.title = `点击${count}次`
+  }, [count])
+
+  useEffect(()=>{
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+
+        const responses = await fetch(
+          "https://jsonplaceholder.typicode.com/users"
+        );
+        // .then(response => response.json())
+        // .then(data => setRobotGallery(data))
+        const data = await responses.json()
+        setRobotGallery(data)
+      }
+      catch (e) {
+        if(e instanceof Error) {
+          setError(e.message);
+        }
+      }
+      setLoading(false)
+    }
+    fetchData();
+  },[])
+  
     return (
       <div className={styles.app}>
         <div className={styles.appHeader}>
@@ -41,29 +62,31 @@ class App extends React.Component<Props, State> {
           <h1>罗伯特机器人炫酷online购物平台</h1>
         </div>
         <button onClick={()=>{
-          this.setState((preState, preprops)=>{ return {count: preState.count+1}}, ()=> {
-            console.log("count", this.state.count)
-          });
-          this.setState((preState, preprops)=>{ return {count: preState.count+1}}, ()=> {
-            console.log("count", this.state.count)
-          });
-          
-        }}>Click</button>
-        <span>count: {this.state.count}</span>
+          setCount(count+1)
+        }}
+        >
+          Click
+        </button>
+        <span>count: {count}</span>
         <ShoppingCart/>
-        <div className={styles.robotList}>
-          {/* <div>{html}</div> */}
-          {/* <a href={jsHacked}>My websit</a> */}
-          {this.state.robotGallery.map( r => 
-            <Robot id={r.id} email={r.email} name={r.name} />
-            )
-          }
-        </div>
+        {(!error || error !=="") && <div>网站出错： {error}</div>}
+        { !loading ? 
+          <div className={styles.robotList}>
+            {robotGallery.map( (r, index) => 
+              index % 2 == 0 ? (
+                <RobotDiscount id={r.id} email={r.email} name={r.name} />
+              ) : (
+                <Robot id={r.id} email={r.email} name={r.name} />
+              )
+              )
+            }
+          </div>
+          : <h2>loading 加载中</h2>
+        }
       </div>
       
     );
   }
   
-}
 
 export default App;
